@@ -8,11 +8,13 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
-class TodoListViewControler: UITableViewController {
+class TodoListViewControler: SwipeTableViewController {
     
     var todoItems : Results<Item>?
     let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("items.plist")
+    @IBOutlet weak var searchBar: UISearchBar!
     
     let realm = try! Realm()
     
@@ -28,7 +30,51 @@ class TodoListViewControler: UITableViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
+        tableView.separatorStyle = .none
+        
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        
+        guard let colorHex = selectedCategory?.cellBackgroundHex else {fatalError()}
+            
+        title = selectedCategory?.name
+        
+        updateNavBar(navBarWithHexcode: colorHex)
+
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        
+//        guard let originalColor = UIColor(hexString: "18C9D9") else {fatalError()}
+//        navigationController?.navigationBar.barTintColor = originalColor
+//        navigationController?.navigationBar.tintColor = FlatWhite()
+//        navigationController?.navigationBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor:FlatWhite()]
+
+        updateNavBar(navBarWithHexcode: "18C9D9")
+        
+    }
+    
+    //MARK: - nav bar setup methods
+    
+    func updateNavBar(navBarWithHexcode colorHexCode: String){
+        
+        guard let navBar = navigationController?.navigationBar else {fatalError("navigation controller does not exist")}
+        
+        guard let navBarColor = UIColor(hexString: colorHexCode) else {fatalError()}
+        
+        navBar.barTintColor = navBarColor
+        
+        navBar.tintColor = ContrastColorOf(navBarColor, returnFlat: true)
+        
+        navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor : ContrastColorOf(navBarColor, returnFlat: true)]
+        
+        searchBar.barTintColor = navBarColor
+        
+    }
+    
+    
+    
     
     //MARK: - Tableview data source methods
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -37,13 +83,24 @@ class TodoListViewControler: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+//        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+        
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
         if let item = todoItems?[indexPath.row] {
             
             cell.textLabel?.text = item.title
             
             cell.accessoryType = item.done == true ? .checkmark : .none
+            
+            
+            if let backColor = UIColor(hexString: selectedCategory!.cellBackgroundHex)?.darken(byPercentage: CGFloat(indexPath.row) / CGFloat(todoItems!.count)) {
+//            if let backColor = FlatSkyBlue().darken(byPercentage: CGFloat(indexPath.row) / CGFloat(todoItems!.count)) {
+            
+                cell.backgroundColor = backColor
+                cell.textLabel?.textColor = ContrastColorOf(backColor, returnFlat: true)
+                
+            }
             
         } else {
             cell.textLabel?.text = "no items added"
@@ -135,10 +192,28 @@ class TodoListViewControler: UITableViewController {
     
     func loadItems() {
         
-        todoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
+        todoItems = selectedCategory?.items.sorted(byKeyPath: "dateCreated", ascending: true)
         
         tableView.reloadData()
 
+    }
+    
+    //MARK: - Delete Items
+    override func deleteCategory(at indexPath: IndexPath) {
+        
+        if let itemForDeletion = self.todoItems?[indexPath.row] {
+            
+            do {
+                try realm.write {
+                    realm.delete(itemForDeletion)
+                    
+                }
+            } catch {
+                print("error deleting category, \(error)")
+            }
+            
+        }
+        
     }
     
 }
@@ -165,6 +240,7 @@ extension TodoListViewControler: UISearchBarDelegate {
             
         }
     }
+    
     
 }
 

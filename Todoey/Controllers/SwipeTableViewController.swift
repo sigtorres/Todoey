@@ -19,6 +19,7 @@ class SwipeTableViewController: UITableViewController, SwipeTableViewCellDelegat
 
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         // self.navigationItem.rightBarButtonItem = self.editButtonItem
+        tableView.rowHeight = 80
     }
     
     //MARK: - TAableview Data Source Methods
@@ -41,7 +42,7 @@ class SwipeTableViewController: UITableViewController, SwipeTableViewCellDelegat
         
         let deleteAction = SwipeAction(style: .destructive, title: "Delete") { action, indexPath in
             // handle action by updating model with deletion
-            print("item 'deleted'")
+            print("category deleted'")
 //            let categoryToBeDeleted = self.listOfCategories?[indexPath.row]
 //            self.deleteCategory(category: categoryToBeDeleted!)
             self.deleteCategory(at: indexPath)
@@ -61,7 +62,11 @@ class SwipeTableViewController: UITableViewController, SwipeTableViewCellDelegat
     }
     
     func deleteCategory(at indexPath: IndexPath) {
-        //empty paceholder that we override in the subclass
+        //empty paceholder that we override in the subclass CategoryViewController
+    }
+    
+    func deleteItem(at indexPath: IndexPath) {
+        //empty placeholder that we override in the subclass TodoListViewController
     }
 
 }
